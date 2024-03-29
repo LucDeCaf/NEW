@@ -38,8 +38,103 @@ enum HTMLElement {
 #[derive(Debug)]
 struct Node {
     element: HTMLElement,
-    children: Option<Vec<Token>>,
+    children: Vec<usize>,
     open: bool,
+}
+
+#[derive(Debug)]
+struct Graph {
+    stack: Vec<Node>,
+    root: Option<usize>,
+}
+
+impl Graph {
+    fn new() -> Self {
+        Self {
+            stack: vec![],
+            root: None,
+        }
+    }
+
+    fn set_root(&mut self, root: Option<usize>) {
+        self.root = root;
+    }
+
+    fn add_node(&mut self, node: Node) -> bool {
+        let stack_len = self.stack.len();
+
+        // Handle empty stack or no root
+        if stack_len == 0 || self.root == None {
+            self.root = Some(0);
+            self.stack.push(node);
+            return true;
+        }
+
+        let last_open_index = self.last_open_index();
+        let last_open_node = self.get_node_mut(last_open_index);
+
+        if let Some(last_node) = last_open_node {
+            last_node.children.push(stack_len);
+            self.stack.push(node);
+
+            return true;
+        }
+
+        false
+    }
+
+    fn get_node(&self, index: Option<usize>) -> Option<&Node> {
+        if let Some(index) = index {
+            self.stack.get(index)
+        } else {
+            None
+        }
+    }
+
+    fn get_node_mut(&mut self, index: Option<usize>) -> Option<&mut Node> {
+        if let Some(index) = index {
+            self.stack.get_mut(index)
+        } else {
+            None
+        }
+    }
+
+    fn last_open_index(&mut self) -> Option<usize> {
+        // Check if stack is empty
+        if self.stack.is_empty() {
+            return None;
+        }
+
+        // Check if root is closed
+        if let Some(root) = self.get_node(self.root) {
+            if !root.open {
+                return None;
+            }
+        }
+
+        let mut current_index = self.root;
+
+        loop {
+            let current_node = self.get_node(current_index).unwrap();
+
+            let last_child_index = current_node.children.last().map(ToOwned::to_owned);
+            let last_child = self.get_node(last_child_index);
+
+            let child = if let Some(c) = last_child {
+                c
+            } else {
+                break;
+            };
+
+            if !child.open {
+                break;
+            }
+
+            current_index = last_child_index;
+        }
+
+        current_index
+    }
 }
 
 fn remove_indicator(line: &str) -> String {
@@ -53,18 +148,6 @@ fn remove_indicator(line: &str) -> String {
         String::new()
     }
 }
-
-// fn deepest_open_node_mut<'a>(root: &'a mut Node) -> Option<&'a mut Node> {
-//     if !root.open {
-//         return None;
-//     }
-
-//     let mut traveller = root;
-
-//     while let Some(traveller.children)
-
-//     traveller
-// }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -119,14 +202,9 @@ fn main() {
 
     dbg!("Tokens: ", &tokens);
 
-    // let mut document = Node {
-    //     element: HTMLElement::Document,
-    //     children: Some(vec![]),
-    //     open: true,
-    // };
+    let mut graph = Graph::new();
 
-    // for token in tokens {
-    //     let last_open = deepest_open_node_mut(&mut document);
+    for token in tokens {}
 
-    // }
+    dbg!("Graph: ", &graph);
 }
